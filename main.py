@@ -6,7 +6,7 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
 
-WIDTH, HEIGHT = 500, 800
+WIDTH, HEIGHT = 800, 800
 WIN = pygame.display.set_mode(size=(WIDTH, HEIGHT))
 
 pygame.display.set_caption("Space Invaders")
@@ -17,16 +17,28 @@ MAIN_CHARACTER = pygame.transform.rotate(pygame.transform.scale(pygame.image.loa
 ENEMY = pygame.transform.scale(pygame.image.load(os.path.join("Assets", "space.png")), (MAIN_WIDTH, MAIN_HEIGHT))
 
 VEL = 5
-ENEMY_VEL = 3
+ENEMY_VEL = 2
+ENEMY_DIRECTION = 1
+ENEMY_POSITION_X = 0
+ENEMY_POSITION_Y = 10
 
 FPS = 60
+
+
+class Enemy:
+    def __init__(self, x, y):
+        self.colition = False
+        self.enemy = pygame.Rect(x, y, MAIN_WIDTH, MAIN_HEIGHT)
 
 
 def draw_window(character, enemies):
     WIN.fill(WHITE)
     WIN.blit(MAIN_CHARACTER, (character.x, character.y))
     for enemy in enemies:
-        WIN.blit(ENEMY, (enemy.x, enemy.y))
+        if not enemy.colition:
+            WIN.blit(ENEMY, (enemy.enemy.x, enemy.enemy.y))
+        else:
+            pass
     pygame.display.update()
 
 
@@ -38,28 +50,37 @@ def main_character_handler(key_pressed, character):
 
 
 def enemies_movement_handler(enemies):
-    global ENEMY_VEL
-    if (MAIN_WIDTH * -1) < enemies[0].x < WIDTH:
-        enemies[0].x += ENEMY_VEL
-    if enemies[0].x < (MAIN_WIDTH * -1) or enemies[0].x > WIDTH:
-        ENEMY_VEL = ENEMY_VEL * -1
-        enemies[0].y += MAIN_WIDTH
-        enemies[0].x += ENEMY_VEL
-    for n in range(1, len(enemies)):
-        if enemies[n].y == enemies[n - 1].y:
-            enemies[n].x = enemies[n - 1].x - MAIN_HEIGHT
-        else:
-            if (MAIN_WIDTH * -1) < enemies[n].x < WIDTH + MAIN_HEIGHT:
-                enemies[n].x += (ENEMY_VEL * -1)
-            else:
-                enemies[n].y = enemies[n - 1].y
-            #     enemies[n].y = enemies[n - 1].y
+    global ENEMY_VEL, ENEMY_DIRECTION
+
+    for n in range(0, len(enemies)):
+        if enemies[-1].enemy.x < WIDTH - MAIN_WIDTH and enemies[0].enemy.x > 0:
+            enemies[n].enemy.x += (ENEMY_VEL * ENEMY_DIRECTION)
+
+        if enemies[0].enemy.x <= 0:
+            ENEMY_DIRECTION = 1
+            ENEMY_VEL += 0.05
+            for enemy in enemies:
+                enemy.enemy.y += 10
+                enemy.enemy.x += 10
+            enemies[0].enemy.x = enemies[1].enemy.x - MAIN_WIDTH
+
+        elif enemies[-1].enemy.x >= WIDTH - MAIN_WIDTH:
+            ENEMY_DIRECTION = -1
+            ENEMY_VEL += 0.05
+            for enemy in enemies:
+                enemy.enemy.y += 10
+                enemy.enemy.x -= 10
 
 
 def main():
+    bullets = []
     enemies = []
-    for n in range(2):
-        enemies.append(pygame.Rect(1, 10, MAIN_WIDTH, MAIN_HEIGHT))
+    number = 10
+    for n in range(9):
+        enemies.append(Enemy(number + (MAIN_WIDTH * n), 10))
+    for n in range(9):
+        enemies.append(Enemy(number + (MAIN_WIDTH * n), 10 + MAIN_HEIGHT))
+
     character = pygame.Rect(250, 700, MAIN_WIDTH, MAIN_HEIGHT)
     clock = pygame.time.Clock()
     run = True
