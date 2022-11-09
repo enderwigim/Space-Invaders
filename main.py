@@ -17,10 +17,12 @@ MAIN_CHARACTER = pygame.transform.rotate(pygame.transform.scale(pygame.image.loa
 ENEMY = pygame.transform.scale(pygame.image.load(os.path.join("Assets", "space.png")), (MAIN_WIDTH, MAIN_HEIGHT))
 
 VEL = 5
+BULLETS_VEL = 7
 ENEMY_VEL = 2
 ENEMY_DIRECTION = 1
 ENEMY_POSITION_X = 0
 ENEMY_POSITION_Y = 10
+MAX_BULLETS = 1
 
 FPS = 60
 
@@ -31,14 +33,16 @@ class Enemy:
         self.enemy = pygame.Rect(x, y, MAIN_WIDTH, MAIN_HEIGHT)
 
 
-def draw_window(character, enemies):
+def draw_window(character, enemies, bullets):
     WIN.fill(WHITE)
     WIN.blit(MAIN_CHARACTER, (character.x, character.y))
     for enemy in enemies:
         if not enemy.colition:
             WIN.blit(ENEMY, (enemy.enemy.x, enemy.enemy.y))
         else:
-            pass
+            continue
+    for bullet in bullets:
+        pygame.draw.rect(WIN, RED, bullet)
     pygame.display.update()
 
 
@@ -72,8 +76,19 @@ def enemies_movement_handler(enemies):
                 enemy.enemy.x -= 10
 
 
+def handle_bullets(bullets, enemies):
+    for bullet in bullets:
+        bullet.y -= BULLETS_VEL
+        for enemy in enemies:
+            if bullet.colliderect(enemy.enemy) and not enemy.colition:
+                bullets.remove(bullet)
+                enemy.colition = True
+        if bullet.y < 0:
+            bullets.remove(bullet)
+
+
 def main():
-    bullets = []
+    user_bullets = []
     enemies = []
     number = 10
     for n in range(9):
@@ -89,10 +104,16 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP and len(user_bullets) < MAX_BULLETS:
+                    bullet = pygame.Rect(
+                        (character.x + character.width // 2), character.y, 5, 10)
+                    user_bullets.append(bullet)
         key_pressed = pygame.key.get_pressed()
         main_character_handler(key_pressed, character)
         enemies_movement_handler(enemies)
-        draw_window(character, enemies)
+        handle_bullets(user_bullets, enemies)
+        draw_window(character, enemies, user_bullets)
 
 
 if __name__ == "__main__":
