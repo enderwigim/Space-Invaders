@@ -12,9 +12,10 @@ WIN = pygame.display.set_mode(size=(WIDTH, HEIGHT))
 pygame.display.set_caption("Space Invaders")
 
 MAIN_WIDTH, MAIN_HEIGHT = 70, 60
-MAIN_CHARACTER = pygame.transform.rotate(pygame.transform.scale(pygame.image.load(
-    os.path.join("Assets", "spaceship_red.png")), (MAIN_WIDTH, MAIN_HEIGHT)), 180)
-ENEMY = pygame.transform.scale(pygame.image.load(os.path.join("Assets", "space.png")), (MAIN_WIDTH, MAIN_HEIGHT))
+SPACE_WIDTH, SPACE_HEIGHT = 120, 120
+MAIN_CHARACTER = pygame.transform.scale(pygame.image.load(
+    os.path.join("Assets", "Space1.png")), (SPACE_WIDTH, SPACE_HEIGHT))
+ENEMY = pygame.transform.scale(pygame.image.load(os.path.join("Assets", "alien.png")), (MAIN_WIDTH, MAIN_HEIGHT))
 
 VEL = 5
 BULLETS_VEL = 7
@@ -98,8 +99,7 @@ def main():
         enemies.append(Enemy(number + ((MAIN_WIDTH + 5) * n), 10))
     for n in range(7):
         enemies.append(Enemy(number + ((MAIN_WIDTH + 5) * n), 10 + MAIN_HEIGHT))
-
-    character = pygame.Rect(250, 700, MAIN_WIDTH, MAIN_HEIGHT)
+    character = pygame.Rect(250, 650, MAIN_WIDTH, MAIN_HEIGHT)
     clock = pygame.time.Clock()
     run = True
     while run:
@@ -110,7 +110,7 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP and len(user_bullets) < MAX_BULLETS:
                     bullet = pygame.Rect(
-                        (character.x + character.width // 2), character.y, 5, 10)
+                        (character.x + character.width // 2 + 20), character.y, 5, 10)
                     user_bullets.append(bullet)
         key_pressed = pygame.key.get_pressed()
         main_character_handler(key_pressed, character)
