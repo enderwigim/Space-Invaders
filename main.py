@@ -68,7 +68,7 @@ def enemies_movement_handler(enemies):
                 enemy.enemy.x += 10
             enemies[0].enemy.x = enemies[1].enemy.x - MAIN_WIDTH
 
-        elif enemies[-1].enemy.x >= WIDTH - MAIN_WIDTH:
+        elif enemies[n].enemy.x >= WIDTH - MAIN_WIDTH:
             ENEMY_DIRECTION = -1
             ENEMY_VEL += 0.05
             for enemy in enemies:
@@ -82,7 +82,10 @@ def handle_bullets(bullets, enemies):
         for enemy in enemies:
             if bullet.colliderect(enemy.enemy) and not enemy.colition:
                 bullets.remove(bullet)
-                enemy.colition = True
+                if enemy == enemies[1] and enemies[0].colition == False:
+                    enemies[1].colition = True
+                else:
+                    enemies.remove(enemy)
         if bullet.y < 0:
             bullets.remove(bullet)
 
@@ -91,10 +94,10 @@ def main():
     user_bullets = []
     enemies = []
     number = 10
-    for n in range(9):
-        enemies.append(Enemy(number + (MAIN_WIDTH * n), 10))
-    for n in range(9):
-        enemies.append(Enemy(number + (MAIN_WIDTH * n), 10 + MAIN_HEIGHT))
+    for n in range(7):
+        enemies.append(Enemy(number + ((MAIN_WIDTH + 5) * n), 10))
+    for n in range(7):
+        enemies.append(Enemy(number + ((MAIN_WIDTH + 5) * n), 10 + MAIN_HEIGHT))
 
     character = pygame.Rect(250, 700, MAIN_WIDTH, MAIN_HEIGHT)
     clock = pygame.time.Clock()
