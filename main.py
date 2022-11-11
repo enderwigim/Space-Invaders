@@ -36,6 +36,30 @@ FPS = 60
         #     #     pass
         #     # self.current_sprite += 1
 
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self, picture_path, pos_x, pos_y):
+        super().__init__()
+
+        self.image = pygame.transform.scale(
+            pygame.image.load(os.path.join("Assets", picture_path)),
+            (5, 15))
+        self.rect = self.image.get_rect()
+        self.rect.center = [pos_x, pos_y]
+
+    def update(self, enemies, bullets):
+        self.rect.y -= BULLETS_VEL
+        for enemy in enemies:
+            if self.rect.colliderect(enemy):
+                enemy.colition = True
+                for bullet in bullets:
+                    bullet.kill()
+            if self.rect.y < 0:
+                for bullet in bullets:
+                    bullet.kill()
+
+
+
+
 
 class Alien(pygame.sprite.Sprite):
     def __init__(self, picture_path, pos_x, pos_y):
@@ -63,18 +87,23 @@ class Alien(pygame.sprite.Sprite):
         self.colition = False
 
     def destruction(self):
-        if self.colition:
-            if self.explotion <= len(self.explotion_sprites):
-                self.image = self.explotion_sprites[int(self.explotion)]
-            self.explotion += 0.1
+        if self.explotion <= len(self.explotion_sprites):
+            self.image = self.explotion_sprites[int(self.explotion)]
+        self.explotion += 0.1
 
-    def update(self):
+        if self.explotion > len(self.explotion_sprites):
+            self.kill()
+
+
+
+    def update(self, enemies):
         global ENEMY_VEL, ENEMY_DIRECTION
         if ENEMY_DIRECTION == "left":
             self.rect.x += ENEMY_VEL
         elif ENEMY_DIRECTION == "right":
             self.rect.x -= ENEMY_VEL
-        self.destruction()
+        if self.colition:
+            self.destruction()
 
 
 def enemies_movement_handler(enemies):
@@ -112,13 +141,13 @@ def main_character_handler(key_pressed, character):
 
 def handle_bullets(bullets, enemies):
     for bullet in bullets:
-        bullet.y -= BULLETS_VEL
+        bullet.rect.y -= BULLETS_VEL
         for enemy in enemies:
             if bullet.colliderect(enemy) and not enemy.colition:
                 bullets.remove(bullet)
                 enemy.colition = True
                 enemy.destruction()
-                # enemy.kill()
+                enemy.kill()
 
 
         if bullet.y < 0:
@@ -126,7 +155,7 @@ def handle_bullets(bullets, enemies):
 
 
 def main():
-    user_bullets = []
+    user_bullets = pygame.sprite.Group()
     enemies = pygame.sprite.Group()
     number = 10
 
@@ -163,14 +192,18 @@ def main():
                 run = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP and len(user_bullets) < MAX_BULLETS:
-                    bullet = pygame.Rect(
-                        (character.x + character.width // 2), character.y, 5, 15)
-                    user_bullets.append(bullet)
+                    new_bullet = Bullet("laser.png", (character.x + MAIN_WIDTH // 2 - 2), character.y)
+                    user_bullets.add(new_bullet)
+
+                    # bullet = pygame.Rect(
+                    #     (character.x + character.width // 2), character.y, 5, 15)
+                    # user_bullets.append(bullet)
         key_pressed = pygame.key.get_pressed()
         main_character_handler(key_pressed, character)
         enemies_movement_handler(enemies)
-        enemies.update()
-        handle_bullets(user_bullets, enemies)
+        user_bullets.update(enemies, user_bullets)
+        enemies.update(enemies)
+        # handle_bullets(user_bullets, enemies)
         draw_window(character, enemies, user_bullets)
 
 
