@@ -25,6 +25,11 @@ LIFE_X_POSITION = [-200, 50, 90, 130]
 pygame.font.init()
 GAMEOVER_FONT = pygame.font.SysFont('comicsans', 100)
 
+pygame.mixer.init()
+MAIN_BULLET_SOUND = pygame.mixer.Sound(os.path.join("Assets/sounds", "Laser Blaster.mp3"))
+ENEMY_BULLET_SOUND = pygame.mixer.Sound(os.path.join("Assets/sounds", "Laser Enemy.mp3"))
+# EXPLOSION = pygame.mixer.Sound(os.path.join("Assets/sounds", "Explosion.mp3"))
+
 background = pygame.transform.scale(pygame.image.load(os.path.join("Assets", "space.png")), (WIDTH, HEIGHT))
 
 VEL = 5
@@ -124,6 +129,7 @@ class Alien(pygame.sprite.Sprite):
         if self.explotion <= len(self.explotion_sprites):
             self.image = self.explotion_sprites[int(self.explotion)]
         self.explotion += 0.1
+        # EXPLOSION.play()
 
         if self.explotion > len(self.explotion_sprites):
             self.kill()
@@ -142,6 +148,7 @@ class Alien(pygame.sprite.Sprite):
             if random.random() < ENEMY_BULLETS_PROBABILITY and len(enemy_bullets) < MAX_ENEMY_BULLETS:
                 new_alien_bullet = AlienBullet("laser.png", (enemy.rect.x + MAIN_WIDTH // 2 - 2), enemy.rect.y)
                 enemy_bullets.add(new_alien_bullet)
+                ENEMY_BULLET_SOUND.play()
 
     def update(self, enemies, enemy_bullets, shields, character):
         global ENEMY_VEL, ENEMY_DIRECTION
@@ -240,7 +247,7 @@ class Player(pygame.sprite.Sprite):
         if self.explotion <= len(self.explotion_sprites):
             self.image = self.explotion_sprites[int(self.explotion)]
         self.explotion += 0.1
-
+        # EXPLOSION.play()
         if self.explotion > len(self.explotion_sprites):
             if self.health > 0:
                 pause()
@@ -365,6 +372,7 @@ def main():
                     for n in character:
                         new_bullet = PlayerBullet("laser.png", (n.rect.x + MAIN_WIDTH // 2 - 3), n.rect.y)
                         user_bullets.add(new_bullet)
+                        MAIN_BULLET_SOUND.play()
 
         key_pressed = pygame.key.get_pressed()
         character.update(key_pressed, character, enemy_bullets, enemies, lives)
