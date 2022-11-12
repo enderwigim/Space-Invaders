@@ -1,4 +1,5 @@
 import pygame
+
 import os
 import random
 import time
@@ -18,6 +19,11 @@ SPACE_WIDTH, SPACE_HEIGHT = 60, 62
 SHIELD_WIDTH, SHIELD_HEIGHT = 130, 60
 SHIELD_POSITION = [136, 403, 670]
 BULLET_WIDTH, BULLET_HEIGHT = 7, 20
+LIFE_WIDTH, LIFE_HEIGHT = 40, 42
+LIFE_X_POSITION = [-200, 50, 90, 130]
+
+pygame.font.init()
+GAMEOVER_FONT = pygame.font.SysFont('comicsans', 100)
 
 background = pygame.transform.scale(pygame.image.load(os.path.join("Assets", "space.png")), (WIDTH, HEIGHT))
 
@@ -80,16 +86,13 @@ class PlayerBullet(pygame.sprite.Sprite):
         for enemy in enemies:
             if self.rect.colliderect(enemy):
                 enemy.colition = True
-                for bullet in bullets:
-                    bullet.kill()
+                self.kill()
         if self.rect.y < 0:
-            for bullet in bullets:
-                bullet.kill()
+            self.kill()
         for shield in shields:
             if self.rect.colliderect(shield):
-                for bullet in bullets:
-                    shield.health -= 1
-                    bullet.kill()
+                shield.health -= 1
+                self.kill()
 
 
 class Alien(pygame.sprite.Sprite):
@@ -175,19 +178,15 @@ class AlienBullet(pygame.sprite.Sprite):
         self.rect.y += BULLETS_VEL
         for n in character:
             if self.rect.colliderect(n):
-                for bullet in bullets:
-                    bullet.kill()
+                self.kill()
                 n.health -= 1
                 n.colition = True
         if self.rect.y > (800 - BULLET_HEIGHT):
-            for bullet in bullets:
-                bullet.kill()
+            self.kill()
         for shield in shields:
             if self.rect.colliderect(shield):
-                print(shield.health)
-                for bullet in bullets:
-                    shield.health -= 1
-                    bullet.kill()
+                shield.health -= 1
+                self.kill()
 
 
 def enemies_movement_handler(enemies):
@@ -205,7 +204,7 @@ def enemies_movement_handler(enemies):
             ENEMY_VEL += 0.05
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, picture_path, pos_x, pos_y):
+    def __init__(self, picture_path, pos_x, pos_y, lives):
         super().__init__()
 
         self.explotion_sprites = []
@@ -232,9 +231,12 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = [pos_x, pos_y]
         self.colition = False
 
-        self.health = 3
+        self.health = 4
+        for n in range(self.health):
+            new_live = PlayerLive("Space1.png", LIFE_X_POSITION[n], 760)
+            lives.add(new_live)
 
-    def destruction(self):
+    def destruction(self, lives):
         if self.explotion <= len(self.explotion_sprites):
             self.image = self.explotion_sprites[int(self.explotion)]
         self.explotion += 0.1
@@ -242,25 +244,44 @@ class Player(pygame.sprite.Sprite):
         if self.explotion > len(self.explotion_sprites):
             if self.health > 0:
                 pause()
+                for live in lives:
+                    live.kill()
+                for n in range(self.health):
+                    print(n)
+                    new_live = PlayerLive("Space1.png", LIFE_X_POSITION[n], 760)
+                    lives.add(new_live)
                 self.explotion = 0
                 self.colition = False
                 self.image = self.explotion_sprites[0]
             else:
+                for live in lives:
+                    live.kill()
                 pause()
                 self.kill()
+                game_over()
 
 
 
-    def update(self, key_pressed, character, enemy_bullets, enemies):
+    def update(self, key_pressed, character, enemy_bullets, enemies, lives):
         if key_pressed[pygame.K_LEFT] and self.rect.x > 0:  # Left
             self.rect.x -= VEL
         if key_pressed[pygame.K_RIGHT] and self.rect.x < WIDTH - MAIN_WIDTH:  # Right
             self.rect.x += VEL
         if self.colition:
-            self.destruction()
+            self.destruction(lives)
+
+class PlayerLive(pygame.sprite.Sprite):
+    def __init__(self, picture_path, pos_x, pos_y):
+        super().__init__()
+
+        self.image = pygame.transform.scale(
+            pygame.image.load(os.path.join("Assets", picture_path)),
+            (LIFE_WIDTH, LIFE_HEIGHT))
+        self.rect = self.image.get_rect()
+        self.rect.center = [pos_x, pos_y]
 
 
-def draw_window(character, enemies, bullets, shields, enemy_bullets):
+def draw_window(character, enemies, bullets, shields, enemy_bullets, lives):
     WIN.blit(background, (0, 0))
 
     character.draw(WIN)
@@ -268,13 +289,24 @@ def draw_window(character, enemies, bullets, shields, enemy_bullets):
     bullets.draw(WIN)
     shields.draw(WIN)
     enemy_bullets.draw(WIN)
+    lives.draw(WIN)
     # for bullet in bullets:
     #     pygame.draw.rect(WIN, RED, bullet)
     pygame.display.update()
 
+
 def pause():
     pygame.display.update()
     pygame.time.delay(5000)
+
+
+def game_over():
+    draw_text = GAMEOVER_FONT.render("Game Over", True, WHITE)
+    WIN.blit(draw_text, (WIDTH//2 - draw_text.get_width()//2, HEIGHT//2 - draw_text.get_height()//2))
+
+    pygame.display.update()
+    pygame.time.delay(5000)
+
 
 def main():
     user_bullets = pygame.sprite.Group()
@@ -282,6 +314,8 @@ def main():
     shields = pygame.sprite.Group()
     enemy_bullets = pygame.sprite.Group()
     character = pygame.sprite.GroupSingle()
+    lives = pygame.sprite.Group()
+
     for alien in range(8):
         alien_num = 1
         if alien_num == 1:
@@ -313,8 +347,9 @@ def main():
         new_shield = Shield((SHIELD_POSITION[shield]), 600)
         shields.add(new_shield)
 
-    new_character = Player("Space1.png", 400, 700)
+    new_character = Player("Space1.png", 400, 700, lives)
     character.add(new_character)
+
 
 
     clock = pygame.time.Clock()
@@ -332,13 +367,14 @@ def main():
                         user_bullets.add(new_bullet)
 
         key_pressed = pygame.key.get_pressed()
-        character.update(key_pressed, character, enemy_bullets, enemies)
+        character.update(key_pressed, character, enemy_bullets, enemies, lives)
         enemies_movement_handler(enemies)
         user_bullets.update(enemies, user_bullets, shields)
         shields.update()
         enemies.update(enemies, enemy_bullets, shields, character)
         enemy_bullets.update(character, enemy_bullets, shields)
-        draw_window(character, enemies, user_bullets, shields, enemy_bullets)
+        draw_window(character, enemies, user_bullets, shields, enemy_bullets, lives)
+
 
 
 if __name__ == "__main__":
