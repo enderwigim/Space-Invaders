@@ -21,9 +21,11 @@ SHIELD_POSITION = [136, 403, 670]
 BULLET_WIDTH, BULLET_HEIGHT = 7, 20
 LIFE_WIDTH, LIFE_HEIGHT = 40, 42
 LIFE_X_POSITION = [-200, 50, 90, 130]
+SCORE_X, SCORE_Y = 330, 10
 
 pygame.font.init()
-GAMEOVER_FONT = pygame.font.SysFont('comicsans', 100)
+SCORE_FONT = pygame.font.SysFont("courier", 25)
+GAMEOVER_FONT = pygame.font.SysFont('courier', 100)
 
 pygame.mixer.init()
 MAIN_BULLET_SOUND = pygame.mixer.Sound(os.path.join("Assets/sounds", "Laser Blaster.mp3"))
@@ -86,11 +88,13 @@ class PlayerBullet(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = [pos_x, pos_y]
 
-    def update(self, enemies, bullets, shields):
+    def update(self, enemies, bullets, shields, character):
         self.rect.y -= BULLETS_VEL
         for enemy in enemies:
             if self.rect.colliderect(enemy):
                 enemy.colition = True
+                for user_character in character:
+                    user_character.score += enemy.score
                 self.kill()
         if self.rect.y < 0:
             self.kill()
@@ -117,13 +121,20 @@ class Alien(pygame.sprite.Sprite):
         self.explotion_sprites.append(
             pygame.transform.scale(
                 pygame.image.load(os.path.join("Assets", "explotion4.png")), (SPACE_WIDTH, SPACE_HEIGHT)))
-        self.explotion = 0
+
         self.image = pygame.transform.scale(
             pygame.image.load(os.path.join("Assets", picture_path)),
             (SPACE_WIDTH, SPACE_HEIGHT))
+
+        if picture_path == "alien.png":
+            self.score = 10
+        if picture_path == "alien2.png":
+            self.score = 5
+
         self.rect = self.image.get_rect()
         self.rect.center = [pos_x, pos_y]
         self.colition = False
+        self.explotion = 0
 
     def destruction(self):
         if self.explotion <= len(self.explotion_sprites):
@@ -210,6 +221,7 @@ def enemies_movement_handler(enemies):
                 n.rect.y += 10
             ENEMY_VEL += 0.05
 
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, picture_path, pos_x, pos_y, lives):
         super().__init__()
@@ -231,16 +243,16 @@ class Player(pygame.sprite.Sprite):
             pygame.transform.scale(
                 pygame.image.load(os.path.join("Assets", "explotion4.png")), (MAIN_WIDTH, MAIN_HEIGHT)))
 
-
-        self.explotion = 0
         self.image = self.explotion_sprites[0]
         self.rect = self.image.get_rect()
         self.rect.center = [pos_x, pos_y]
-        self.colition = False
 
+        self.explotion = 0
+        self.colition = False
+        self.score = 0
         self.health = 4
         for n in range(self.health):
-            new_live = PlayerLive("Space1.png", LIFE_X_POSITION[n], 760)
+            new_live = PlayerLive("Space1.png", LIFE_X_POSITION[n], 30)
             lives.add(new_live)
 
     def destruction(self, lives):
@@ -255,7 +267,7 @@ class Player(pygame.sprite.Sprite):
                     live.kill()
                 for n in range(self.health):
                     print(n)
-                    new_live = PlayerLive("Space1.png", LIFE_X_POSITION[n], 760)
+                    new_live = PlayerLive("Space1.png", LIFE_X_POSITION[n], 30)
                     lives.add(new_live)
                 self.explotion = 0
                 self.colition = False
@@ -267,8 +279,6 @@ class Player(pygame.sprite.Sprite):
                 self.kill()
                 game_over()
 
-
-
     def update(self, key_pressed, character, enemy_bullets, enemies, lives):
         if key_pressed[pygame.K_LEFT] and self.rect.x > 0:  # Left
             self.rect.x -= VEL
@@ -276,6 +286,8 @@ class Player(pygame.sprite.Sprite):
             self.rect.x += VEL
         if self.colition:
             self.destruction(lives)
+        print(self.score)
+
 
 class PlayerLive(pygame.sprite.Sprite):
     def __init__(self, picture_path, pos_x, pos_y):
@@ -297,6 +309,9 @@ def draw_window(character, enemies, bullets, shields, enemy_bullets, lives):
     shields.draw(WIN)
     enemy_bullets.draw(WIN)
     lives.draw(WIN)
+    for user in character:
+        score_text = SCORE_FONT.render(f"Score: {user.score}", True, WHITE)
+        WIN.blit(score_text, (SCORE_X, SCORE_Y))
     # for bullet in bullets:
     #     pygame.draw.rect(WIN, RED, bullet)
     pygame.display.update()
@@ -315,6 +330,7 @@ def game_over():
     pygame.time.delay(5000)
 
 
+
 def main():
     user_bullets = pygame.sprite.Group()
     enemies = pygame.sprite.Group()
@@ -329,7 +345,7 @@ def main():
             alien_sprite = "alien.png"
         else:
             alien_sprite = "alien2.png"
-        new_alien = Alien(alien_sprite, (SPACE_WIDTH + ((SPACE_WIDTH + 10) * alien)), (SPACE_HEIGHT - 15))
+        new_alien = Alien(alien_sprite, (SPACE_WIDTH + ((SPACE_WIDTH + 10) * alien)), SPACE_HEIGHT + 30)
         enemies.add(new_alien)
 
     for alien in range(8):
@@ -338,7 +354,7 @@ def main():
             alien_sprite = "alien.png"
         else:
             alien_sprite = "alien2.png"
-        new_alien = Alien(alien_sprite, (SPACE_WIDTH + ((SPACE_WIDTH + 10) * alien)), (SPACE_HEIGHT - 10) * 2)
+        new_alien = Alien(alien_sprite, (SPACE_WIDTH + ((SPACE_WIDTH + 10) * alien)), (SPACE_HEIGHT + 30) * 2)
         enemies.add(new_alien)
 
     for alien in range(8):
@@ -347,7 +363,7 @@ def main():
             alien_sprite = "alien.png"
         else:
             alien_sprite = "alien2.png"
-        new_alien = Alien(alien_sprite, (SPACE_WIDTH + ((SPACE_WIDTH + 10) * alien)), (SPACE_HEIGHT - 10) * 3)
+        new_alien = Alien(alien_sprite, (SPACE_WIDTH + ((SPACE_WIDTH + 10) * alien)), (SPACE_HEIGHT + 30) * 3)
         enemies.add(new_alien)
 
     for shield in range(3):
@@ -377,13 +393,13 @@ def main():
         key_pressed = pygame.key.get_pressed()
         character.update(key_pressed, character, enemy_bullets, enemies, lives)
         enemies_movement_handler(enemies)
-        user_bullets.update(enemies, user_bullets, shields)
+        user_bullets.update(enemies, user_bullets, shields, character)
         shields.update()
         enemies.update(enemies, enemy_bullets, shields, character)
         enemy_bullets.update(character, enemy_bullets, shields)
         draw_window(character, enemies, user_bullets, shields, enemy_bullets, lives)
 
 
-
 if __name__ == "__main__":
     main()
+    
